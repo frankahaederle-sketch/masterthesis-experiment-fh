@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChatGPT – Ideation Session</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f7f7f8;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .container {
+    width: 100%; max-width: 720px; height: 90vh;
+    background: #fff; border-radius: 16px;
+    border: 1px solid #e5e5e5;
+    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+  .header {
+    padding: 14px 20px; border-bottom: 1px solid #e5e5e5;
+    display: flex; align-items: center; justify-content: space-between;
+    background: #fff;
+  }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .logo {
+    width: 28px; height: 28px; background: #10a37f;
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+  }
+  .logo svg { width: 16px; height: 16px; fill: white; }
+  .h-title { font-size: 15px; font-weight: 600; color: #111; }
+  .h-sub { font-size: 12px; color: #666; margin-top: 1px; }
+
+  .timer-box {
+    display: flex; align-items: center; gap: 8px;
+    background: #f0faf6; border: 1px solid #10a37f;
+    border-radius: 8px; padding: 6px 14px;
+  }
+  .timer-box.warning { background: #fff8f0; border-color: #f59e0b; }
+  .timer-box.expired { background: #fff0f0; border-color: #ef4444; }
+  .timer-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #10a37f; animation: pulse 1.5s infinite;
+  }
+  .timer-box.warning .timer-dot { background: #f59e0b; }
+  .timer-box.expired .timer-dot { background: #ef4444; animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .timer-label { font-size: 11px; color: #666; }
+  .timer-value {
+    font-size: 16px; font-weight: 700; color: #10a37f;
+    font-variant-numeric: tabular-nums; letter-spacing: 0.5px;
+  }
+  .timer-box.warning .timer-value { color: #f59e0b; }
+  .timer-box.expired .timer-value { color: #ef4444; }
+
+  .progress-bar { height: 3px; background: #f0f0f0; }
+  .progress-fill { height: 100%; background: #10a37f; transition: width 1s linear, background 1s; }
+
+  .messages {
+    flex: 1; overflow-y: auto; padding: 20px;
+    display: flex; flex-direction: column; gap: 16px;
+    scroll-behavior: smooth;
+  }
+  .message { display: flex; gap: 12px; animation: fadeIn 0.2s ease; }
+  .message.user { flex-direction: row-reverse; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600;
+  }
+  .avatar.ai { background: #10a37f; color: white; }
+  .avatar.user { background: #6366f1; color: white; }
+  .bubble {
+    max-width: 78%; padding: 10px 14px; border-radius: 12px;
+    font-size: 14px; line-height: 1.6; color: #111;
+  }
+  .message.ai .bubble {
+    background: #f7f7f8; border: 1px solid #e5e5e5;
+    border-radius: 4px 12px 12px 12px;
+  }
+  .message.user .bubble {
+    background: #6366f1; color: #fff;
+    border-radius: 12px 4px 12px 12px;
+  }
+  .typing { display: flex; gap: 4px; padding: 4px 2px; }
+  .typing span {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #999; animation: bounce 1.2s infinite;
+  }
+  .typing span:nth-child(2){animation-delay:.2s}
+  .typing span:nth-child(3){animation-delay:.4s}
+  @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+  .input-area {
+    padding: 14px 16px; border-top: 1px solid #e5e5e5;
+    background: #fff; display: flex; gap: 10px; align-items: flex-end;
+  }
+  .input-wrapper {
+    flex: 1; display: flex; align-items: flex-end;
+    border: 1.5px solid #d9d9e3; border-radius: 10px;
+    padding: 8px 12px; transition: border-color 0.15s; background: #fff;
+  }
+  .input-wrapper:focus-within { border-color: #10a37f; }
+  .input-wrapper.disabled { background: #f7f7f8; }
+  textarea {
+    flex: 1; border: none; outline: none; resize: none;
+    font-size: 14px; font-family: inherit; line-height: 1.5;
+    max-height: 120px; background: transparent; color: #111;
+  }
+  textarea::placeholder { color: #aaa; }
+  textarea:disabled { color: #aaa; cursor: not-allowed; }
+  .send-btn {
+    width: 34px; height: 34px; border-radius: 8px; border: none;
+    background: #10a37f; color: white; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, transform 0.1s; flex-shrink: 0;
+  }
+  .send-btn:hover:not(:disabled) { background: #0d8a6b; }
+  .send-btn:active:not(:disabled) { transform: scale(0.95); }
+  .send-btn:disabled { background: #ccc; cursor: not-allowed; }
+  .send-btn svg { width: 16px; height: 16px; }
+
+  .expired-banner {
+    display: none; background: #fff3f3; border-top: 2px solid #ef4444;
+    padding: 12px 20px; text-align: center;
+    font-size: 14px; color: #cc0000; font-weight: 500;
+  }
+  .copy-btn {
+    display: none; margin: 0 16px 12px; padding: 10px;
+    background: #f0faf6; border: 1px solid #10a37f;
+    border-radius: 8px; color: #10a37f; font-size: 13px;
+    font-weight: 500; cursor: pointer; text-align: center;
+    transition: background 0.15s;
+  }
+  .copy-btn:hover { background: #e0f5ef; }
+  .welcome {
+    text-align: center; color: #888; font-size: 13px; padding: 20px;
+  }
+  .welcome strong { color: #111; display: block; font-size: 15px; margin-bottom: 6px; }
+  .pid-badge {
+    font-size: 11px; color: #999; text-align: center;
+    padding: 4px 0 0; font-family: monospace;
+  }
+  .saved-indicator {
+    font-size: 11px; color: #10a37f; text-align: center;
+    padding: 4px 16px; display: none;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">
+        <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+      </div>
+      <div>
+        <div class="h-title">ChatGPT</div>
+        <div class="h-sub">Study Session — HNU Ideation Task</div>
+      </div>
+    </div>
+    <div class="timer-box" id="timerBox">
+      <div class="timer-dot" id="timerDot"></div>
+      <div>
+        <div class="timer-label">Time remaining</div>
+        <div class="timer-value" id="timerValue">5:00</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width:100%"></div>
+  </div>
+
+  <div class="messages" id="messages">
+    <div class="welcome">
+      <strong>Welcome to your ideation session</strong>
+      Ask ChatGPT for ideas on improving the Hochschule Neu-Ulm (HNU). You have 5 minutes. Copy your conversation into the survey after you are done ideating with ChatGPT.
+    </div>
+    <div class="pid-badge" id="pidBadge"></div>
+  </div>
+
+  <div class="expired-banner" id="expiredBanner">
+    ⏱ Time is up. Please copy your full conversation and paste it into the survey.
+  </div>
+
+  <div class="saved-indicator" id="savedIndicator">✓ Conversation saved to study database</div>
+
+  <button class="copy-btn" id="copyBtn" onclick="copyConversation()">
+    Copy full conversation to clipboard — then return to the survey
+  </button>
+
+  <div class="input-area">
+    <div class="input-wrapper" id="inputWrapper">
+      <textarea
+        id="userInput"
+        placeholder="Ask ChatGPT for ideas on improving HNU..."
+        rows="1"
+        onkeydown="handleKey(event)"
+        oninput="autoResize(this)"
+      ></textarea>
+    </div>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+           stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// ⚙ CONFIGURATION — fill in both values before going live
+// ═══════════════════════════════════════════════════════════
+
+const OPENAI_API_KEY = "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";
+// e.g. "sk-proj-xxxxxxxxxxxx"
+
+const GOOGLE_SHEET_WEBHOOK = "https://script.google.com/macros/s/AKfycbwR_PYU55fUWgiWhRywtcdCYixowB7mdjsqT5oK-7RElbtYJVNmIVkhHgChL1cbBIGgag/exec";
+// e.g. "https://script.google.com/macros/s/AKfyc.../exec"
+
+const SESSION_MINUTES = 5;
+
+// ═══════════════════════════════════════════════════════════
+
+const TOTAL_SECONDS = SESSION_MINUTES * 60;
+let secondsLeft = TOTAL_SECONDS;
+let timerInterval = null;
+let sessionEnded = false;
+const conversationHistory = [];
+
+// Read participant ID from URL: ?pid=R_xxxxx
+const urlParams = new URLSearchParams(window.location.search);
+const participantId = urlParams.get('pid') || 'UNKNOWN_' + Date.now();
+
+// Show participant ID (for debugging; remove in production if desired)
+const pidBadge = document.getElementById('pidBadge');
+pidBadge.textContent = `Session ID: ${participantId}`;
+
+// ── Timer ──────────────────────────────────────────────────
+function formatTime(s) {
+  return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+}
+
+function startTimer() {
+  timerInterval = setInterval(() => {
+    secondsLeft--;
+    document.getElementById('timerValue').textContent = formatTime(secondsLeft);
+    document.getElementById('progressFill').style.width =
+      (secondsLeft / TOTAL_SECONDS * 100) + '%';
+
+    if (secondsLeft <= 60 && secondsLeft > 0) {
+      document.getElementById('timerBox').className = 'timer-box warning';
+      document.getElementById('progressFill').style.background = '#f59e0b';
+    }
+    if (secondsLeft <= 0) {
+      clearInterval(timerInterval);
+      endSession();
+    }
+  }, 1000);
+}
+
+function endSession() {
+  sessionEnded = true;
+  document.getElementById('timerBox').className = 'timer-box expired';
+  document.getElementById('timerValue').textContent = '0:00';
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('progressFill').style.background = '#ef4444';
+  document.getElementById('expiredBanner').style.display = 'block';
+  document.getElementById('copyBtn').style.display = 'block';
+  document.getElementById('userInput').disabled = true;
+  document.getElementById('sendBtn').disabled = true;
+  document.getElementById('inputWrapper').classList.add('disabled');
+  saveToGoogleSheet();
+}
+
+// ── UI helpers ─────────────────────────────────────────────
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function appendMessage(role, text) {
+  const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+  div.innerHTML = `
+    <div class="avatar ${role}">${role === 'ai' ? 'GPT' : 'You'}</div>
+    <div class="bubble">${text.replace(/\n/g, '<br>')}</div>
+  `;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function showTyping() {
+  const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'message ai';
+  div.id = 'typingIndicator';
+  div.innerHTML = `
+    <div class="avatar ai">GPT</div>
+    <div class="bubble">
+      <div class="typing"><span></span><span></span><span></span></div>
+    </div>`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+// ── Send message ───────────────────────────────────────────
+async function sendMessage() {
+  if (sessionEnded) return;
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('sendBtn').disabled = true;
+
+  appendMessage('user', text);
+  conversationHistory.push({ role: 'user', content: text });
+  showTyping();
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        max_tokens: 800,
+        messages: [
+          {
+            role: 'system',
+            content: `You are ChatGPT, a helpful brainstorming assistant.
+Your role is to help the user generate diverse ideas for improving the student experience at Hochschule Neu-Ulm (HNU), a university of applied sciences in Germany.
+Provide creative, varied suggestions covering different areas such as learning environments, campus life, digital tools, student support, social spaces, and administrative processes.
+Offer 3-5 distinct ideas per response unless asked otherwise. Be concise and actionable.
+Always refer to yourself as ChatGPT if asked who you are.`
+          },
+          ...conversationHistory
+        ]
+      })
+    });
+
+    const data = await response.json();
+    const reply = data.choices?.[0]?.message?.content
+      || 'Sorry, I could not generate a response. Please try again.';
+
+    document.getElementById('typingIndicator')?.remove();
+    appendMessage('ai', reply);
+    conversationHistory.push({ role: 'assistant', content: reply });
+
+  } catch (err) {
+    document.getElementById('typingIndicator')?.remove();
+    appendMessage('ai', 'Connection error. Please check your internet and try again.');
+  }
+
+  if (!sessionEnded) {
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('userInput').focus();
+  }
+}
+
+// ── Save to Google Sheet ───────────────────────────────────
+async function saveToGoogleSheet() {
+  if (!GOOGLE_SHEET_WEBHOOK || GOOGLE_SHEET_WEBHOOK === "DEIN_GOOGLE_APPS_SCRIPT_URL_HIER") return;
+
+  const conversationText = conversationHistory
+    .map(m => `[${m.role === 'user' ? 'PARTICIPANT' : 'AI'}] ${m.content}`)
+    .join('\n\n');
+
+  const promptsOnly = conversationHistory
+    .filter(m => m.role === 'user')
+    .map((m, i) => `Prompt ${i + 1}: ${m.content}`)
+    .join('\n');
+
+  const payload = {
+    participant_id: participantId,
+    timestamp: new Date().toISOString(),
+    num_prompts: conversationHistory.filter(m => m.role === 'user').length,
+    prompts: promptsOnly,
+    full_conversation: conversationText
+  };
+
+  try {
+    await fetch(GOOGLE_SHEET_WEBHOOK, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    document.getElementById('savedIndicator').style.display = 'block';
+  } catch (err) {
+    console.error('Could not save to Google Sheet:', err);
+  }
+}
+
+// ── Copy conversation ──────────────────────────────────────
+function copyConversation() {
+  let text = `=== AI Ideation Session ===\n`;
+  text += `Participant ID: ${participantId}\n`;
+  text += `Date: ${new Date().toLocaleString()}\n\n`;
+
+  conversationHistory.forEach(m => {
+    const role = m.role === 'user' ? 'PARTICIPANT' : 'AI ASSISTANT';
+    text += `[${role}]\n${m.content}\n\n`;
+  });
+  text += '=== End of Conversation ===';
+
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ Copied! Now return to the survey.';
+    btn.style.background = '#e0f5ef';
+    setTimeout(() => {
+      btn.textContent = 'Copy full conversation to clipboard — then return to the survey';
+      btn.style.background = '#f0faf6';
+    }, 3000);
+  }).catch(() => {
+    alert('Could not copy automatically. Please select all text on this page and copy manually.');
+  });
+}
+
+// ── Start ──────────────────────────────────────────────────
+startTimer();
+document.getElementById('userInput').focus();
+</script>
+</body>
+</html>
